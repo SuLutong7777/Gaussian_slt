@@ -1,0 +1,75 @@
+#################################### 模型信息 ####################################
+model:
+  # 球谐函数阶数
+  sh_degree: 3
+  # 数据源路径
+  source_path: "/home/a_datasets0/nerf_synthetic/chair"
+  # 图像文件夹路径
+  images_path: "images"
+  # 存储模型路径
+  model_path: "/home/sulutong/3dgs-slt/output/chair"
+  # 深度信息文件夹路径
+  depths_path: ""
+  # 分辨率
+  resolution: -1
+  # 是否使用白色背景
+  white_background: False
+  # 是否进行训练和测试实验
+  train_test_exp: False
+  # 是否处于评估模式
+  eval_mode: False
+  # 设备
+  data_device: "cuda"
+
+#################################### 优化器信息 ####################################
+optimization:
+  # 训练的最大迭代次数
+  iterations_MAX: 30000
+  # 位置参数的学习率初始值和最终值
+  position_lr_init: 0.00016
+  position_lr_final: 0.0000016
+  # 位置参数学习率在初始阶段的延迟倍数，用于慢启动以防止训练初期过快更新导致的不稳定
+  position_lr_delay_mult: 0.01
+  # 位置参数学习率从初始值到最终值所需的最大步数
+  position_lr_max_steps: 30000
+  # 各种训练参数的学习率，包括特征、透明度、缩放和旋转的学习率
+  feature_lr: 0.0025
+  opacity_lr: 0.025
+  scaling_lr: 0.005
+  rotation_lr: 0.001
+  # 曝光参数的初始和最终学习率，用于逐步调整曝光相关参数的权重
+  exposure_lr_init: 0.01
+  exposure_lr_final: 0.001
+  exposure_lr_delay_steps: 0
+  exposure_lr_delay_mult: 0.0
+  # 控制 DSSIM（结构相似度损失）的权重，默认为 0.2，用于平衡 DSSIM 损失与其他损失项的权重
+  lambda_dssim: 0.2
+  # 透明度重置的间隔步数，每隔指定步数重新初始化透明度值，以避免陷入局部最优解
+  opacity_reset_interval: 3000
+  # 定义稠密化的比例，默认为 0.01，用于指定稠密化阶段的稀疏程度或权重
+  percent_dense: 0.01
+  # 稠密化的间隔步数,每隔多少步数进行一次稠密化
+  densification_interval: 100
+  # 控制稠密化阶段的开始和结束迭代
+  densify_from_iter: 500
+  densify_until_iter: 15_000
+  # 设置一个梯度阈值，通常在模型训练过程中用来控制“密集化”或“增强”操作的触发条件
+  densify_grad_threshold: 0.0002
+  # 深度L1损失权重的初始值和最终值，用于逐步调整深度损失的权重，使其对训练的影响逐渐减小
+  depth_l1_weight_init: 1.0
+  depth_l1_weight_final: 0.01
+  # 是否开启随机背景
+  random_background: False
+  # 优化器类型
+  optimizer_type: "default"
+  
+#################################### 管道配置信息 ####################################
+pipeline:
+  # 是否在python中进行球谐函数的转换
+  convert_SHs_python: False
+  # 是否在python中进行3D协方差的计算
+  compute_cov3D_python: False
+  # 是否启用调试模式
+  debug: False
+  # 是否启用抗锯齿处理，抗锯齿是一种平滑图像边缘的技术，可以减少边缘的锯齿状效果，提高图像的视觉质量
+  antialiasing: False
