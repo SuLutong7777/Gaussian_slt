@@ -29,7 +29,13 @@ python test.py
     render_pkg = render(viewpoint_cam, gaussians, pipe, bg, use_trained_exp=dataset.train_test_exp, separate_sh=SPARSE_ADAM_AVAILABLE)
   File "/home/seven/seven/gaussian-splatting-main/gaussian_renderer/__init__.py", line 36, in render
     raster_settings = GaussianRasterizationSettings(
-TypeError: <lambda>() got an unexpected keyword argument 'antialiasing'`报错，但是进入`GaussianRasterizationSettings`发现是有这个参数的，最后发现是因为最新版的有，更新一下`diff-gaussian-rasterization`就好了
+TypeError: <lambda>() got an unexpected keyword argument 'antialiasing'`报错，但是进入`GaussianRasterizationSettings`发现是有这个参数的，最后发现是因为最新版的有，更新一下`diff-gaussian-rasterization`就好了,最新版的`diff-gaussian-rasterization`的链接：`https://github.com/graphdeco-inria/diff-gaussian-rasterization/tree/9c5c2028f6fbee2be239bc4c9421ff894fe4fbe0`
+如果已经安装了旧版本，先卸载旧版本：
+`pip uninstall diff-gaussian-rasterization -y`
+把原来的`diff-gaussian-rasterization`文件删掉，换成最新的文件，然后
+`pip install submodules/diff-gaussian-rasterization`
+
+
 
 
 
