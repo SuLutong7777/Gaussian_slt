@@ -32,13 +32,13 @@ python test.py
 TypeError: <lambda>() got an unexpected keyword argument 'antialiasing'`报错，但是进入GaussianRasterizationSettings发现是有这个参数的，最后发现是因为最新版的有，更新一下diff-gaussian-rasterization就好了,最新版的diff-gaussian-rasterization的链接：`https://github.com/graphdeco-inria/diff-gaussian-rasterization/tree/9c5c2028f6fbee2be239bc4c9421ff894fe4fbe0`
 
 如果已经安装了旧版本，先卸载旧版本：
-
-`pip uninstall diff-gaussian-rasterization -y`
-
+```
+pip uninstall diff-gaussian-rasterization -y
+```
 把原来的diff-gaussian-rasterization文件删掉，换成最新的文件，然后
-
-`pip install submodules/diff-gaussian-rasterization`
-
+```
+pip install submodules/diff-gaussian-rasterization
+```
 
 
 
