@@ -22,6 +22,15 @@ python test.py
 
 2.`pip install submodules/diff-gaussian-rasterization`失败，最后发现原因是`submodules/diff-gaussian-rasterization/third_party/glm`是空的，把`glm`源码下载过来就可以了
 
+3.`Traceback (most recent call last):
+  File "/home/seven/seven/gaussian-splatting-main/train.py", line 282, in <module>
+    training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from)
+  File "/home/seven/seven/gaussian-splatting-main/train.py", line 111, in training
+    render_pkg = render(viewpoint_cam, gaussians, pipe, bg, use_trained_exp=dataset.train_test_exp, separate_sh=SPARSE_ADAM_AVAILABLE)
+  File "/home/seven/seven/gaussian-splatting-main/gaussian_renderer/__init__.py", line 36, in render
+    raster_settings = GaussianRasterizationSettings(
+TypeError: <lambda>() got an unexpected keyword argument 'antialiasing'`报错，但是进入`GaussianRasterizationSettings`发现是有这个参数的，最后发现是因为最新版的有，更新一下`diff-gaussian-rasterization`就好了
+
 
 
 
