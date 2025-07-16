@@ -61,11 +61,11 @@ def train(sys_param, gaussian_model: GaussianModel, scene: Scene):
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
     use_sparse_adam = sys_param['optimizer_type'] == "sparse_adam" and SPARSE_ADAM_AVAILABLE 
-    # 生成一个学习率调整函数，具体控制深度 L1 损失的权重（depth_l1_weight）随训练迭代的变化
+    # 生成一个学习率调整函数，具体控制深度L1损失的权重（depth_l1_weight）随训练迭代的变化
     depth_l1_weight = get_expon_lr_func(lr_init=sys_param['depth_l1_weight_init'],
                                         lr_final=sys_param['depth_l1_weight_final'],
                                         max_steps=sys_param['iterations_MAX'])
-    # 获取训练摄像机（视点）列表，并将其复制到 viewpoint_stack 中
+    # 获取训练摄像机(视点)列表，并将其复制到viewpoint_stack中
     viewpoint_stack = scene.getTrainCameras().copy()
     print("训练模块！！！！-----训练摄像机列表: ", len(viewpoint_stack))
     # 创建一个包含所有视点索引的列表
@@ -119,18 +119,14 @@ def train(sys_param, gaussian_model: GaussianModel, scene: Scene):
         bg = torch.rand((3), device='cuda') if sys_param['random_background'] else background
         # 调用render函数对当前相机视角进行渲染
         render_pkg = render(viewpoint_camera=viewpoint_cam, pc=gaussian_model, sys_param=sys_param, bg_color=bg,
-                            separate_sh=SPARSE_ADAM_AVAILABLE, use_trained_exp=sys_param['train_test_exp'])
+                            separate_sh=SPARSE_ADAM_AVAILABLE)
         # 提取渲染结果从render_pkg中
-        # image：渲染的图像（通常是RGB图像）。
+        # image：渲染的图像(通常是RGB图像) (3, 800, 800)
         # viewspace_point_tensor：视空间中的点，可能用于后续计算或分析。
         # visibility_filter：可见性过滤器，用于筛选可见的点或区域。
         # radii：可能表示物体或场景中物体的半径，或者是渲染时的某些尺度信息。
         image, viewspace_point_tensor, visibility_filter, radii = render_pkg['render'], render_pkg['viewspace_points'], render_pkg['visibility_filter'], render_pkg['radii']
-        # 应用透明度掩码
-        if viewpoint_cam.alpha_mask is not None:
-            alpha_mask = viewpoint_cam.alpha_mask.cuda()
-            image *= alpha_mask
-
+        
         ######################## 计算RGB图像损失 ########################
         # 获取该相机视角真实图片
         gt_image = viewpoint_cam.original_image.cuda()
@@ -148,6 +144,7 @@ def train(sys_param, gaussian_model: GaussianModel, scene: Scene):
         update_loss_plot(iteration, loss.item(), save_path=f"loss_curve_{iteration}.png")
         ######################## 计算深度图损失 ########################
         Ll1depth_pure = 0.0
+        # blender不进这个
         if depth_l1_weight(iteration) > 0 and viewpoint_cam.depth_reliable:
             invDepth = render_pkg['depth']
             mono_invDepth = viewpoint_cam.invdepthmap.cuda()
@@ -178,7 +175,7 @@ def train(sys_param, gaussian_model: GaussianModel, scene: Scene):
                 progress_bar.close()
 
             ######################## 日志记录和模型保存 ########################
-            training_report(tb_writer, iteration, Ll1, loss, l1_loss, iter_start.elapsed_time(iter_end), sys_param['test_iterations'], scene, render, (sys_param, background, sys_param['train_test_exp'], SPARSE_ADAM_AVAILABLE), sys_param['train_test_exp'])
+            training_report(tb_writer, iteration, Ll1, loss, l1_loss, iter_start.elapsed_time(iter_end), sys_param['test_iterations'], scene, render, (sys_param, background, SPARSE_ADAM_AVAILABLE))
             if (iteration in sys_param['save_iterations']):
                 print("\n[ITER {}] Saving Gaussians".format(iteration))
                 scene.save(iteration)
@@ -222,14 +219,10 @@ def prepare_output_and_logger(sys_param):
             unique_str=os.getenv('OAR_JOB_ID')
         else:
             unique_str = str(uuid.uuid4())
-        sys_param['model_path'] = os.path.join("./output/", unique_str[0:10])
-        
+        sys_param['model_path'] = os.path.join("./output/", unique_str[0:10])      
     # Set up output folder
     print("Output folder: {}".format(sys_param['model_path']))
     os.makedirs(sys_param['model_path'], exist_ok = True)
-    # with open(os.path.join(sys_param['model_path'], "cfg_args"), 'w') as cfg_log_f:
-    #     cfg_log_f.write(str(argparse.Namespace(**vars(args))))
-
     # Create Tensorboard writer
     tb_writer = None
     if TENSORBOARD_FOUND:
@@ -238,7 +231,7 @@ def prepare_output_and_logger(sys_param):
         print("Tensorboard not available: not logging progress")
     return tb_writer
 
-def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, scene : Scene, renderFunc, sys_param, train_test_exp):
+def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, scene : Scene, renderFunc, sys_param):
     if tb_writer:
         tb_writer.add_scalar('train_loss_patches/l1_loss', Ll1.item(), iteration)
         tb_writer.add_scalar('train_loss_patches/total_loss', loss.item(), iteration)
@@ -257,9 +250,6 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
                 for idx, viewpoint in enumerate(config['cameras']):
                     image = torch.clamp(renderFunc(viewpoint, scene.gaussian_model, *sys_param)["render"], 0.0, 1.0)
                     gt_image = torch.clamp(viewpoint.original_image.to("cuda"), 0.0, 1.0)
-                    if train_test_exp:
-                        image = image[..., image.shape[-1] // 2:]
-                        gt_image = gt_image[..., gt_image.shape[-1] // 2:]
                     if tb_writer and (idx < 5):
                         tb_writer.add_images(config['name'] + "_view_{}/render".format(viewpoint.image_name), image[None], global_step=iteration)
                         if iteration == testing_iterations[0]:
@@ -286,8 +276,7 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
 # scaling_modifier：可选的缩放因子，用于调整渲染的大小。
 # separate_sh：是否分离SH（球面谐波）特征，影响渲染过程中SH颜色的处理方式。
 # override_color：如果提供了此参数，将使用自定义颜色，否则会计算或使用默认颜色。
-# use_trained_exp：是否使用训练中获取的曝光信息来调整渲染图像。
-def render(viewpoint_camera, pc:GaussianModel, sys_param, bg_color:torch.Tensor, scaling_modifier=1.0, separate_sh=False, override_color=None, use_trained_exp=False):
+def render(viewpoint_camera, pc:GaussianModel, sys_param, bg_color:torch.Tensor, scaling_modifier=1.0, separate_sh=False, override_color=None):
     # 创建一个零向量，用于保存渲染过程中的2D屏幕空间点，并为其启用梯度计算
     screenspace_points = torch.zeros_like(pc.get_xyz, dtype=pc.get_xyz.dtype, requires_grad=True, device="cuda") + 0
     # retain_grad()一般用于非叶子节点（非模型参数）的张量，以便在反向传播后仍然可以访问梯度。
@@ -295,6 +284,7 @@ def render(viewpoint_camera, pc:GaussianModel, sys_param, bg_color:torch.Tensor,
         screenspace_points.retain_grad()
     except:
         pass
+    # print("!!!!!!!!!!!!!!!!!!!!!!!", viewpoint_camera.FoVx, viewpoint_camera.image_height, viewpoint_camera.image_width)
     tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
     tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
     # 设置光栅化配置
@@ -381,19 +371,8 @@ def render(viewpoint_camera, pc:GaussianModel, sys_param, bg_color:torch.Tensor,
             cov3D_precomp = cov3D_precomp
         )
 
-    # 应用曝光信息渲染图像（仅训练）
-    if use_trained_exp:
-        # pc.get_exposure_from_name 是一个函数，可能是从点云模型（pc）中获取某个特定视角的曝光信息。viewpoint_camera.image_name 传递的是当前相机的图像名称，用于索引对应的曝光参数。
-        # exposure[:3, :3] 取的是一个3x3矩阵，通常表示相机的色彩校正矩阵或RGB通道的线性变换。
-        # exposure[:3, 3, None, None] 取的是曝光的偏移量，通常表示相机图像的亮度调整。
-        exposure = pc.get_exposure_from_name(viewpoint_camera.image_name)
-        rendered_image = torch.matmul(rendered_image.permute(1, 2, 0), exposure[:3, :3]).permute(2, 0, 1) + exposure[:3, 3,   None, None]
     rendered_image = rendered_image.clamp(0, 1)
     # torch.cuda.is_available()
-
-    # screenspace_points = screenspace_points.cpu()
-    # print(f"Has NaNs: {torch.isnan(screenspace_points).any()}")
-
     # render: 渲染后的图像结果
     # viewspace_points: 相机变换后的视图空间坐标
     # visibility_filter: 计算可见点的索引，用于筛选出在屏幕上可见的高斯点。 [N, d]:N表示可见点数量，d表示点的维度
@@ -410,15 +389,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # 配置文件路径
     parser.add_argument('--config', type=str, default='./config')
-    # 网络配置
-    parser.add_argument('--ip', type=str, default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=6009)
-    # 是否启用检测程序,默认不启用
-    parser.add_argument("--detect_anomaly", action='store_true', default=False)
     # 是否开始安静模式，不输出日志信息
     parser.add_argument('--quiet', action='store_true')
-    # 禁用训练过程中的可视化查看器
-    parser.add_argument('--disable_viewer', action='store_true', default=False)
     # 用于指定从哪个迭代步骤开始启动调试,默认为-1，不启动调试
     parser.add_argument("--debug_from", type=int, default=-1)
     # 指定测试的迭代步骤, nargs="+"表示可以接受一个或多个值
