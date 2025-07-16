@@ -21,11 +21,7 @@ class Load_config():
         system_info={}
         ############### 训练参数 ###############
         if mode == 'train':
-            system_info['ip'] = args.ip
-            system_info['port'] = args.port
-            system_info['detect_anomaly'] = args.detect_anomaly
             system_info['quiet'] = args.quiet
-            system_info['disable_viewer'] = args.disable_viewer
             system_info['debug_from'] = args.debug_from
             system_info['test_iterations'] = args.test_iterations
             system_info['save_iterations'] = args.save_iterations
@@ -51,12 +47,9 @@ class Load_config():
             ######################## 模型参数 ########################
             self.system_info['sh_degree'] = cfg_info['model']['sh_degree']
             self.system_info['source_path'] = cfg_info['model']['source_path']
-            self.system_info['images_path'] = cfg_info['model']['images_path']
             self.system_info['model_path'] = cfg_info['model']['model_path']
-            self.system_info['depths_path'] = cfg_info['model']['depths_path']
             self.system_info['resolution'] = cfg_info['model']['resolution']
             self.system_info['white_background'] = cfg_info['model']['white_background']
-            self.system_info['train_test_exp'] = cfg_info['model']['train_test_exp']
             self.system_info['eval_mode'] = cfg_info['model']['eval_mode']
             self.system_info['data_device'] = cfg_info['model']['data_device']
             ######################## 优化器参数 ########################

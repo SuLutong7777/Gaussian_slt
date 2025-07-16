@@ -1,23 +1,17 @@
 #################################### 模型信息 ####################################
 model:
   # 球谐函数阶数
-  sh_degree: 3
+  sh_degree: 1
   # 数据源路径
-  source_path: "/home/a_datasets0/nerf_synthetic/chair"
-  # 图像文件夹路径
-  images_path: "images"
+  source_path: "/home/sulutong/3D-GS-test/Gaussian_slt-main/data/nerf_synthetic/lego"
   # 存储模型路径
-  model_path: "/home/sulutong/3dgs-slt/output/chair"
-  # 深度信息文件夹路径
-  depths_path: ""
+  model_path: "/home/sulutong/3D-GS-test/Gaussian_slt-main/output/lego-1"
   # 分辨率
   resolution: -1
   # 是否使用白色背景
-  white_background: False
-  # 是否进行训练和测试实验
-  train_test_exp: False
+  white_background: True
   # 是否处于评估模式
-  eval_mode: False
+  eval_mode: True
   # 设备
   data_device: "cuda"
 
