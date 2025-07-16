@@ -157,23 +157,10 @@ class GaussianModel:
             return self.pretrained_exposures[image_name]
 
     ################# 从已有文件加载点云信息 #################
-    def load_ply(self, ply_path, use_train_test_exp = False):
+    def load_ply(self, ply_path):
         print("数据读取模块！！！！-----从特定步骤文件初始化点云信息")
         ############## 加载ply文件 ##############
         plydata = PlyData.read(ply_path)
-        # print("ply_path: ", ply_path)
-        # print("plydata: ", plydata)
-        ############## 加载曝光文件 ############## ????
-        if use_train_test_exp:
-            exposure_file = os.path.join(os.path.dirname(ply_path), os.pardir, os.pardir, "exposure.json")
-            if os.path.exists(exposure_file):
-                with open(exposure_file, "r") as f:
-                    exposures = json.load(f)
-                self.pretrained_exposures = {image_name: torch.FloatTensor(exposures[image_name]).requires_grad_(False).cuda() for image_name in exposures}
-                print(f"Pretrained exposures loaded.")
-            else:
-                print(f"No exposure to be loaded at {exposure_file}")
-                self.pretrained_exposures = None
         ############## 加载点云数据位置坐标 ##############
         # 转换成numpy数组，[N, 3]
         xyz = np.stack((np.asarray(plydata.elements[0]['x']),
