@@ -1,9 +1,0 @@
-[submodule "submodules/diff-gaussian-rasterization"]
-	path = submodules/diff-gaussian-rasterization
-	url = git@github.com:graphdeco-inria/diff-gaussian-rasterization.git
-[submodule "submodules/fused-ssim"]
-	path = submodules/fused-ssim
-	url = git@github.com:rahul-goel/fused-ssim.git
-[submodule "submodules/simple-knn"]
-	path = submodules/simple-knn
-	url = git@github.com:YixunLiang/simple-knn.git
